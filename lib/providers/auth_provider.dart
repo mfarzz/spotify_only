@@ -3,24 +3,33 @@ import '../models/auth_model.dart';
 import '../services/auth_service.dart';
 
 class SpotifyAuthProvider extends ChangeNotifier {
-  final SpotifyAuthService _authService = SpotifyAuthService();
+  // Use the singleton AuthService instance
+  final AuthService _authService = AuthService();
   
-  SpotifyAuthModel? _authData;
+  // Internal state
   bool _isLoading = false;
   String? _error;
   
-  SpotifyAuthModel? get authData => _authData;
+  // Getters
   bool get isLoading => _isLoading;
   String? get error => _error;
-  bool get isAuthenticated => _authData != null;
+  bool get isAuthenticated => _authService.currentUser != null;
+  SpotifyAuthModel? get authData => _authService.currentUser;
   
-  // Inisialisasi provider dengan mencoba memuat token tersimpan
+  // Initialize provider and listen to auth changes
   Future<void> initialize() async {
     _isLoading = true;
     notifyListeners();
     
     try {
-      _authData = await _authService.getSavedAuthToken();
+      // Initialize the auth service
+      await _authService.initialize();
+      
+      // Set up listener for auth changes
+      AuthService.userStream.listen((user) {
+        // Notify listeners when auth state changes
+        notifyListeners();
+      });
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -29,15 +38,15 @@ class SpotifyAuthProvider extends ChangeNotifier {
     }
   }
   
-  // Memulai proses login
+  // Login method
   Future<bool> login() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
     
     try {
-      _authData = await _authService.authenticate();
-      final success = _authData != null;
+      // Use the AuthService's loginWithSpotify method
+      final success = await _authService.loginWithSpotify();
       
       if (!success) {
         _error = 'Failed to authenticate with Spotify';
@@ -53,14 +62,13 @@ class SpotifyAuthProvider extends ChangeNotifier {
     }
   }
   
-  // Logout
+  // Logout method
   Future<void> logout() async {
     _isLoading = true;
     notifyListeners();
     
     try {
       await _authService.logout();
-      _authData = null;
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -69,32 +77,8 @@ class SpotifyAuthProvider extends ChangeNotifier {
     }
   }
   
-  // Dapatkan token untuk API calls
+  // Get access token for API calls
   String? getAccessToken() {
-    if (_authData == null) return null;
-    
-    // Jika token kedaluwarsa, refresh otomatis
-    if (_authData!.isExpired) {
-      _refreshToken();
-      return null; // Return null karena refresh sedang berjalan
-    }
-    
-    return _authData!.accessToken;
-  }
-  
-  // Refresh token secara internal
-  Future<void> _refreshToken() async {
-    if (_authData == null) return;
-    
-    try {
-      _authData = await _authService.refreshToken(_authData!.refreshToken);
-      if (_authData == null) {
-        _error = 'Failed to refresh token';
-      }
-    } catch (e) {
-      _error = e.toString();
-    }
-    
-    notifyListeners();
+    return _authService.getAccessToken();
   }
 }

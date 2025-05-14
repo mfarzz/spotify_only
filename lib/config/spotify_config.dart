@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class SpotifyConfig {
   static String get clientId => dotenv.env['SPOTIFY_CLIENT_ID'] ?? '';
   static String get clientSecret => dotenv.env['SPOTIFY_CLIENT_SECRET'] ?? '';
-  static String get redirectUri => dotenv.env['SPOTIFY_REDIRECT_URI'] ?? '';
+  static String get redirectUri => dotenv.env['SPOTIFY_MOBILE_REDIRECT_URI'] ?? '';
   
   static const String authUrl = 'https://accounts.spotify.com/authorize';
   static const String tokenUrl = 'https://accounts.spotify.com/api/token';
@@ -13,6 +13,8 @@ class SpotifyConfig {
     'user-read-private',
     'user-read-email',
     'user-library-read',
+    'user-read-recently-played',
+    'user-top-read',
     // Tambahkan scope lain sesuai kebutuhan
   ];
   
